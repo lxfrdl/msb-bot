@@ -1,10 +1,10 @@
 import {
     ApplicationCommandData,
-    Client,
     Interaction,
     SlashCommandBuilder
 } from "discord.js";
 import {CommandHandler, DiscordHandler} from "../../DiscordHandler/DiscordHandler";
+import {TrashService} from "../../Services/TrashService";
 
 export class NextTrashDatesCommandHandler implements CommandHandler {
 
@@ -16,11 +16,11 @@ export class NextTrashDatesCommandHandler implements CommandHandler {
         })
         .toJSON() as ApplicationCommandData
 
-    async execute ({ interaction, trashService }) {
+    async execute ({ interaction, trashService } : { interaction: Interaction, trashService: TrashService }) {
         if (!interaction.isChatInputCommand()) return
         console.log("colled the right trash handler")
         const x = await trashService.getNextTrashDates()
-        let message = "die nächsten Termine sind: \n"
+        let message: string = "die nächsten Termine sind: \n"
         x.forEach(trashDate => {
             message += `${trashDate.timeString()} - ${trashDate.type}\n`
         })
@@ -28,9 +28,6 @@ export class NextTrashDatesCommandHandler implements CommandHandler {
         interaction.reply({
             content: message
         });
-    }
-    async run(client: Client, interaction: Interaction, discordHandler: DiscordHandler): Promise<void> {
-        console.log("colled the wrong trash handler")
     }
 
     getName(): string {

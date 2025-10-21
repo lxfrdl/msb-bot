@@ -20,23 +20,30 @@ export class GenerateCodesCommandHandler implements CommandHandler {
         ])
         .toJSON() as ApplicationCommandData
 
-    async execute({ interaction, config }) {
+    async execute({ interaction, config, logger }) {
         if (!interaction.isChatInputCommand()) return
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral })
-        const projectService = new ProjectService(interaction.guild.id)
-        const projects = await projectService.getActiveProjects()
-        if (projects.length === 0) {
-            await interaction.editReply({
-                content: "No active projects",
-            });
-            return
-        }
-        const projectText = `List of active projects: \n${projects.map((project) => project.name).join("\n")}`
-        const projectList = projects.map((project) => `**${project.name}**\n${project.description}`).join("\n---------\n")
+        try {
+            await interaction.deferReply({flags: MessageFlags.Ephemeral})
+            const projectService = new ProjectService(interaction.guild.id)
+            const projects = await projectService.getActiveProjects()
+            if (projects.length === 0) {
+                await interaction.editReply({
+                    content: "No active projects",
+                });
+                return
+            }
+            const projectText = `List of active projects: \n${projects.map((project) => project.name).join("\n")}`
+            const projectList = projects.map((project) => `**${project.name}**\n${project.description}`).join("\n---------\n")
 
-        await interaction.editReply({
-            content: projectList,
-        });
+            await interaction.editReply({
+                content: projectList,
+            });
+        } catch (e) {
+            logger.error(e)
+            await interaction.editReply({
+                content: 'Something went wrong, sorry.',
+            });
+        }
 
     }
 

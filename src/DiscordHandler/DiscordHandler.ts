@@ -1,7 +1,7 @@
 import {
     ApplicationCommand, ApplicationCommandData,
     Client,
-    GuildMember, Interaction, Presence,
+    GuildMember, Interaction, Message, Presence,
     REST,
     Routes,
 } from "discord.js";
@@ -9,6 +9,7 @@ import { Events } from "discord.js";
 import {ActionLoader} from "./ActionLoader";
 import {ContextAppendType, DiscordEventMap, EventContext, Reconcile} from "./types";
 import {BaseLogger} from "pino";
+import spaceStateInfo from "../handlers/spaceState/SpaceStateInfo";
 
 export interface DiscordHandlerOptions {
     client: Client,
@@ -17,6 +18,11 @@ export interface DiscordHandlerOptions {
     config?: object,
     logger?: BaseLogger
 }
+
+export interface Config  {
+    spaceStateInfo?: object
+}
+
 
 
 export class DiscordHandler<Decorators = {}> {
@@ -28,7 +34,7 @@ export class DiscordHandler<Decorators = {}> {
     readonly commands: Map<string, CommandHandler> = new Map();
     readonly events: Map<string, EventHandler> = new Map();
     private rest: REST
-    private logger: BaseLogger;
+    private logger?: BaseLogger;
     private config: object;
 
     constructor (
@@ -37,7 +43,7 @@ export class DiscordHandler<Decorators = {}> {
     )  {
         this.logger = options.logger
         this.decorators = decorators
-        this.logger.debug("this.decorators %o", this.decorators)
+        this.logger?.debug("this.decorators %o", this.decorators)
         this.services = []
         this.options = options
         this.client = options.client
@@ -176,7 +182,9 @@ export class DiscordHandler<Decorators = {}> {
                 if (typeof action.execute === 'function' && action.execute ) {
                     let args = {}
                     this.logger.trace("registering event %o on %s", action.eventType.toString(), action.constructor.name)
-                    this.client.on(action.eventType.toString(), (...args) => action.execute(args, {client: this.client, discordHandler: this, ...this.services}))
+                    this.client.on(action.eventType.toString(), (...args) => {
+                        action.execute(args, {client: this.client, logger: this.logger, discordHandler: this, ...this.services})
+                    })
                 } else {
                     this.logger.trace("registering event %o on %s", action.eventType.toString(), action.constructor.name)
                     this.client.on(action.eventType.toString(), action.run.bind(this, this.client, this))
@@ -200,8 +208,7 @@ export class DiscordHandler<Decorators = {}> {
                         command.run(this.client, interaction, this);
                     }
                 } catch (error) {
-                    console.error("ERROR");
-
+                    console.error(`ERROR running {interaction.commandName}`, error);
                 }
             }
         });
@@ -290,6 +297,15 @@ export interface PresenceUpdateHandler extends EventHandler {
 export interface InteractionCreateHandler extends EventHandler {
     eventType: Events.InteractionCreate
     run?: (client: Client, handler: DiscordHandler, interaction: Interaction) => void
+}
+
+export interface MessageCreateHandler extends EventHandler {
+    eventType: Events.MessageCreate
+    run?: (client: Client, handler: DiscordHandler, message: Message) => void
+    execute?: (
+        [message]: [message: Message],
+        { client, handler }: { client: Client<true>; handler: DiscordHandler }
+    ) => Promise<void> | void
 }
 
 
