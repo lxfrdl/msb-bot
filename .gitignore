@@ -2,3 +2,7 @@
 node_modules
 **/*config.json
 .idea
+output.pdf
+test*.ts
+generictest.ts
+example.ts
