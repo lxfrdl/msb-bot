@@ -165,17 +165,3 @@ class MembercodeCommand {
         return this
     }
 }
-
-export class TestHandler implements CommandHandler {
-
-    command = new SlashCommandBuilder().setName("test").setDescription("test").toJSON() as ApplicationCommandData
-
-    async run(client: Client, interaction: Interaction): Promise<void> {
-        if (!interaction.isChatInputCommand()) return
-        interaction.reply({content: "test"})
-    }
-
-    getName(): string {
-        return "test"
-    }
-}
